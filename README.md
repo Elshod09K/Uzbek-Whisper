@@ -20,4 +20,18 @@ python test_model.py clips_dir/ --refs dev.tsv   # FLEURS-format references
 ```
 
 Runs on CPU (int8) or NVIDIA GPU (float16) automatically. First run downloads ~1.6 GB.
-Sanity check on 5 FLEURS uz_uz dev clips (CPU): WER 16.7%, CER 5.8%.
+
+## Benchmark (20 FLEURS uz_uz dev clips, clean read speech; lower is better)
+
+| Model | WER | CER | Licence |
+|---|---|---|---|
+| navai-uz/whisper-medium-uzbek | 17.3% | 6.6% | Apache-2.0 |
+| Kotib/uzbek_stt_v1 (medium, CT2) | 19.8% | 7.5% | Apache-2.0 |
+| Abduqayum/whisper-uzbek-medium-callcenter | 22.2% | 8.9% | Apache-2.0 |
+| BuzzASR/uzbek (large-v3) | 25.5% | 6.4% | MIT |
+| hostmepanda turbo CT2 | 27.4% | 8.6% | MIT |
+| sarahai/uzbek-stt-3 (wav2vec2) | 78.0% | 19.4% | Apache-2.0 |
+| openai whisper-large-v3-turbo (no fine-tune) | 114.1% | 81.1% | MIT |
+
+FLEURS is clean read speech; phone-call accuracy will differ. Choose a model on a held-out set of real calls.
+Reproduce: `python benchmark.py clips_dir/ dev.tsv` (see `inspect_audio.py` for checking your own WAV archive).
