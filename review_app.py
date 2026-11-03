@@ -19,8 +19,10 @@ import gradio as gr
 
 p = argparse.ArgumentParser()
 p.add_argument("dataset_dir")
-p.add_argument("--order", choices=["random", "worst-first", "in-order"], default="random",
-               help="random = good for an unbiased test set; worst-first = least confident first")
+p.add_argument("--order", choices=["by-call", "random", "worst-first", "in-order"], default="by-call",
+               help="by-call = whole calls in random order, clips in time order (best for the "
+                    "test set: no call is split between test and training); "
+                    "worst-first = least confident clips first")
 p.add_argument("--share-lan", action="store_true", help="listen on all network interfaces")
 p.add_argument("--port", type=int, default=7861)
 args = p.parse_args()
@@ -32,7 +34,12 @@ CLAIM_TIMEOUT = 15 * 60  # a clip opened by one reviewer is hidden from others f
 
 lock = threading.Lock()
 items = [json.loads(l) for l in open(MANIFEST, encoding="utf-8") if l.strip()]
-if args.order == "random":
+if args.order == "by-call":
+    calls = sorted({x["call"] for x in items})
+    random.Random(0).shuffle(calls)
+    rank = {c: i for i, c in enumerate(calls)}
+    items.sort(key=lambda x: (rank[x["call"]], x["start"], x["channel"]))
+elif args.order == "random":
     random.Random(0).shuffle(items)
 elif args.order == "worst-first":
     items.sort(key=lambda x: x["avg_logprob"])
