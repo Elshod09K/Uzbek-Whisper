@@ -8,6 +8,7 @@ MODELS = {
     "navai-uz whisper-medium-uzbek":      ("hf-whisper", "navai-uz/whisper-medium-uzbek"),
     "sarahai uzbek-stt-3 (wav2vec2)":     ("hf-ctc", "sarahai/uzbek-stt-3"),
     "BuzzASR uzbek (large-v3)":           ("hf-whisper", "BuzzASR/uzbek"),
+    "Abduqayum call-center medium":       ("hf-whisper", "Abduqayum/whisper-uzbek-medium-callcenter"),
     "OpenAI whisper-large-v3-turbo (base)": ("ct2", "large-v3-turbo"),
 }
 
