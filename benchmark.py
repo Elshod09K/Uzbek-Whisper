@@ -1,6 +1,7 @@
 """Compare all models in uz_models.py on a folder of clips with FLEURS-style references.
 
-    python benchmark.py clips_dir/ dev.tsv
+    python benchmark.py clips_dir/ dev.tsv                 # all models
+    python benchmark.py clips_dir/ dev.tsv BuzzASR Kotib   # only names containing these words
 """
 import os
 import sys
@@ -16,7 +17,10 @@ refs = load_refs(tsv)
 files = sorted(f for f in os.listdir(clip_dir) if f in refs)
 gold = [normalize(refs[f]) for f in files]
 
+wanted = sys.argv[3:]
 for name in MODELS:
+    if wanted and not any(w.lower() in name.lower() for w in wanted):
+        continue
     t0 = time.time()
     run = load_model(name)
     hyps = [normalize(run(os.path.join(clip_dir, f))) for f in files]

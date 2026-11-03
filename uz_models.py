@@ -7,8 +7,16 @@ MODELS = {
     "Kotib uzbek_stt_v1 medium (CT2)":    ("ct2", "yuldashev222/uzbek_stt_v1-ct2"),
     "navai-uz whisper-medium-uzbek":      ("hf-whisper", "navai-uz/whisper-medium-uzbek"),
     "sarahai uzbek-stt-3 (wav2vec2)":     ("hf-ctc", "sarahai/uzbek-stt-3"),
+    "BuzzASR uzbek (large-v3)":           ("hf-whisper", "BuzzASR/uzbek"),
     "OpenAI whisper-large-v3-turbo (base)": ("ct2", "large-v3-turbo"),
 }
+
+# Per-model decoding settings (from the model cards).
+GENERATE_KWARGS = {
+    # Card: language/task prompt is baked into generation_config; greedy + anti-repetition.
+    "BuzzASR/uzbek": {"num_beams": 1, "no_repeat_ngram_size": 3, "repetition_penalty": 1.2},
+}
+DEFAULT_GENERATE_KWARGS = {"language": "uz", "task": "transcribe", "num_beams": 5}
 
 
 def _device():
@@ -38,20 +46,27 @@ def load_model(name):
     import torch
     from transformers import pipeline
     from faster_whisper.audio import decode_audio  # 16 kHz mono float32, any format
-    dev = 0 if torch.cuda.is_available() else -1
+    if torch.cuda.is_available():
+        dev, dtype = "cuda", torch.float16
+    elif torch.backends.mps.is_available():  # Apple Silicon GPU
+        dev, dtype = "mps", torch.float16
+    else:
+        dev, dtype = "cpu", torch.float32
 
     if backend == "hf-whisper":
-        pipe = pipeline("automatic-speech-recognition", model=repo, device=dev, chunk_length_s=30)
+        pipe = pipeline("automatic-speech-recognition", model=repo, device=dev,
+                        torch_dtype=dtype, chunk_length_s=30)
+        gen = GENERATE_KWARGS.get(repo, DEFAULT_GENERATE_KWARGS)
 
         def run(path):
             audio = decode_audio(path)
-            out = pipe({"raw": audio, "sampling_rate": 16000},
-                       generate_kwargs={"language": "uz", "task": "transcribe", "num_beams": 5})
+            out = pipe({"raw": audio, "sampling_rate": 16000}, generate_kwargs=dict(gen))
             return out["text"].strip()
         return run
 
     if backend == "hf-ctc":
-        pipe = pipeline("automatic-speech-recognition", model=repo, device=dev, chunk_length_s=20)
+        pipe = pipeline("automatic-speech-recognition", model=repo, device=dev,
+                        torch_dtype=dtype, chunk_length_s=20)
 
         def run(path):
             audio = decode_audio(path)
