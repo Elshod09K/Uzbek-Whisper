@@ -1,0 +1,4 @@
+faster-whisper==1.2.1
+av>=11,<16   # PyAV 16+ breaks faster-whisper 1.2.1 (metadata_errors arg)
+gradio>=4.44
+jiwer
