@@ -35,3 +35,18 @@ Runs on CPU (int8) or NVIDIA GPU (float16) automatically. First run downloads ~1
 
 FLEURS is clean read speech; phone-call accuracy will differ. Choose a model on a held-out set of real calls.
 Reproduce: `python benchmark.py clips_dir/ dev.tsv` (see `inspect_audio.py` for checking your own WAV archive).
+
+## Building your own training data from calls
+
+1. **Auto-transcribe** calls into short clips (runs on the RTX 4060 desktop; resumable):
+   ```bash
+   python prepare_dataset.py /path/to/calls dataset/ --limit 50
+   ```
+   Splits stereo into agent/customer channels, cuts speech into clips under 30 s, transcribes them with
+   Kotib uzbek_stt_v1, and writes `dataset/manifest.jsonl` with a confidence-based `keep` flag.
+2. **Human review**: listen, correct, save:
+   ```bash
+   python review_app.py dataset/ --share-lan
+   ```
+   Reviewers on the office network open `http://<PC-IP>:7861`. Saves go to `dataset/reviewed.jsonl`.
+3. **Fine-tune** Kotib on the reviewed clips (next step).
