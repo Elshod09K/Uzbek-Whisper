@@ -70,7 +70,8 @@ def load_model(name):
 
         def run(path):
             audio = decode_audio(path)
-            return pipe({"raw": audio, "sampling_rate": 16000})["text"].strip()
+            text = pipe({"raw": audio, "sampling_rate": 16000})["text"].strip()
+            return text.replace("[UNK]", "ʻ")  # its vocab lacks the oʻ/gʻ apostrophe
         return run
 
     raise ValueError(backend)
