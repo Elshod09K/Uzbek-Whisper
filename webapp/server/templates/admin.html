@@ -1,0 +1,138 @@
+{% extends "base.html" %}
+{% block title %}Dashboard — Uzbek STT{% endblock %}
+{% block body %}
+{% if msg %}<div class="msg">{{ msg }}</div>{% endif %}
+
+<div class="grid">
+  <div class="card {% if train.ready %}ready{% endif %}">
+    <h2>{% if train.ready %}✅ Ready to train{% else %}Training data{% endif %}</h2>
+    <p>New training audio since last round: <b>{{ train.new_train_s|hours }}</b> / {{ train.need_new_s|hours }}
+      <span class="muted small">({{ train.new_train_n }} clips)</span></p>
+    <div class="bar"><i style="width:{{ [100, 100*train.new_train_s/(train.need_new_s or 1)]|min }}%"></i></div>
+    <p>Test set: <b>{{ train.test_s|hours }}</b> / {{ train.need_test_s|hours }} ·
+       All training audio: {{ train.all_train_s|hours }}</p>
+    {% if train.ready %}
+    <form method="post" action="/admin/rounds/start" class="row">
+      <input name="notes" placeholder="notes (optional)"><button class="primary">Start training round</button>
+    </form>
+    {% endif %}
+    <p class="small muted">Last round: {% if train.last %}{{ train.last.created|ago }}{% else %}none yet{% endif %}</p>
+  </div>
+
+  <div class="card">
+    <h2>Inbox</h2>
+    <p><b>{{ inbox }}</b> call files waiting</p>
+    <form method="post" action="/admin/inbox/upload" enctype="multipart/form-data" class="row">
+      <input type="file" name="files" multiple accept="audio/*,.wav"><button>Upload</button>
+    </form>
+    <p class="small muted">Large amounts: copy files straight into the server's <code>inbox/</code> folder instead.</p>
+    <form method="post" action="/admin/batches/new" class="row" style="margin-top:8px">
+      <input type="number" name="n" value="{{ settings.batch_size }}" min="1" style="width:90px"> calls
+      <label class="small"><input type="checkbox" name="is_test" value="1"> test set</label>
+      <button class="primary">Create batch</button>
+    </form>
+  </div>
+
+  <div class="card">
+    <h2>Workers</h2>
+    {% for w in workers %}<p>{{ w.worker }} · seen {{ w.seen|ago }}</p>{% else %}<p class="muted">No worker has connected yet.</p>{% endfor %}
+    <details><summary class="small">Worker token</summary><code style="word-break:break-all">{{ worker_token }}</code></details>
+  </div>
+</div>
+
+<div class="card">
+  <h2>Batches</h2>
+  <div class="scroll"><table>
+    <tr><th>#</th><th>Status</th><th>Calls</th><th>Clips reviewed</th><th></th><th>Audio</th><th>Model</th><th>Created</th><th></th></tr>
+    {% for b in batches %}
+    <tr>
+      <td>{{ b.id }} {% if b.is_test %}<span class="chip">TEST</span>{% endif %}</td>
+      <td class="s-{{ b.status }}">{{ b.status }}</td>
+      <td>{{ b.calls_done }}/{{ b.n_calls }}</td>
+      <td>{{ b.clips_done }}/{{ b.n_clips }}</td>
+      <td><div class="bar"><i style="width:{{ (100*b.frac)|round }}%"></i></div></td>
+      <td>{{ b.secs|hours }}</td>
+      <td class="small">{{ b.model_name or '—' }}</td>
+      <td class="small">{{ b.created|ago }}</td>
+      <td>{% if b.status == 'queued' %}<form method="post" action="/admin/batches/{{ b.id }}/delete">
+        <button class="danger small">remove</button></form>{% endif %}</td>
+    </tr>
+    {% else %}<tr><td colspan="9" class="muted">No batches yet. Put calls in the inbox and create one (tick “test set” for the first).</td></tr>{% endfor %}
+  </table></div>
+</div>
+
+<div class="grid">
+  <div class="card">
+    <h2>Reviewers</h2>
+    <table><tr><th>Name</th><th>Clips</th><th>Audio</th><th>Speed</th><th>Last</th></tr>
+    {% for r in reviewers %}
+      <tr><td>{{ r.reviewer }}</td><td>{{ r.n }} <span class="muted small">({{ r.corrected }} fixed)</span></td>
+      <td>{{ r.secs|hours }}</td>
+      <td class="small">{% if r.secs %}{{ '%.1f'|format(r.spent / r.secs) }}× real time{% endif %}</td>
+      <td class="small">{{ r.last|ago }}</td></tr>
+    {% else %}<tr><td colspan="5" class="muted">No reviews yet.</td></tr>{% endfor %}
+    </table>
+  </div>
+
+  <div class="card">
+    <h2>Users</h2>
+    <table>{% for x in users %}
+      <tr><td>{{ x.username }}</td><td><span class="chip">{{ x.role }}</span></td>
+      <td>{% if x.id != u.id %}<form method="post" action="/admin/users/{{ x.id }}/delete"><button class="danger small">delete</button></form>{% endif %}</td></tr>
+    {% endfor %}</table>
+    <form method="post" action="/admin/users/add" class="row" style="margin-top:10px">
+      <input name="username" placeholder="username" required style="width:130px">
+      <input name="password" type="password" placeholder="password (8+)" required style="width:130px">
+      <select name="role"><option value="reviewer">reviewer</option><option value="admin">admin</option></select>
+      <button>Add</button>
+    </form>
+  </div>
+</div>
+
+<div class="card">
+  <h2>Models</h2>
+  <p class="small muted">The <b>active</b> model transcribes every new batch. After a training round, upload the new model and activate it.</p>
+  <table><tr><th>Name</th><th>Source</th><th>Added</th><th></th></tr>
+  {% for m in models %}
+    <tr><td>{{ m.name }} {% if m.active %}<span class="chip" style="color:var(--ok)">active</span>{% endif %}
+      <div class="small muted">{{ m.notes }}</div></td>
+    <td class="small">{{ m.source }}</td><td class="small">{{ m.created|ago }}</td>
+    <td>{% if not m.active %}<form method="post" action="/admin/models/{{ m.id }}/activate"><button>Activate</button></form>{% endif %}</td></tr>
+  {% endfor %}</table>
+  <div class="row" style="margin-top:12px">
+    <form method="post" action="/admin/models/upload" enctype="multipart/form-data" class="row">
+      <input name="name" placeholder="name, e.g. kotib-calls-v1" required>
+      <input type="file" name="file" accept=".zip" required><input name="notes" placeholder="test WER etc.">
+      <button>Upload CT2 zip</button>
+    </form>
+    <form method="post" action="/admin/models/add" class="row">
+      <input name="name" placeholder="name" required><input name="repo" placeholder="huggingface repo id" required>
+      <button>Add from Hugging Face</button>
+    </form>
+  </div>
+</div>
+
+<div class="grid">
+  <div class="card">
+    <h2>Export data</h2>
+    <p class="row"><a class="btn" href="/admin/export?kind=train">Training set (.tar.gz)</a>
+      <a class="btn" href="/admin/export?kind=test">Test set (.tar.gz)</a>
+      <a class="btn" href="/admin/export?kind=all-reviewed">All reviewed</a></p>
+    <p class="small muted">Training/test sets exclude “bad audio” and clips containing [?].</p>
+    {% if rounds %}<p class="small">Rounds: {% for r in rounds %}#{{ r.id }} ({{ r.created|ago }}, {{ '%.1f'|format(r.train_hours) }} h){% if not loop.last %} · {% endif %}{% endfor %}</p>{% endif %}
+  </div>
+  <div class="card">
+    <h2>Settings</h2>
+    <form method="post" action="/admin/settings">
+      <table>
+        <tr><td>Calls per batch</td><td><input name="batch_size" value="{{ settings.batch_size }}" style="width:80px"></td></tr>
+        <tr><td>Queue next batch when reviewed</td><td><input name="auto_next_at" value="{{ settings.auto_next_at }}" style="width:80px"> (0.75 = 75%)</td></tr>
+        <tr><td>Automatic next batch</td><td><input type="checkbox" name="auto_next" value="1" {% if settings.auto_next == '1' %}checked{% endif %}></td></tr>
+        <tr><td>Hours needed per training round</td><td><input name="ready_hours" value="{{ settings.ready_hours }}" style="width:80px"></td></tr>
+        <tr><td>Test-set hours needed</td><td><input name="min_test_hours" value="{{ settings.min_test_hours }}" style="width:80px"></td></tr>
+      </table>
+      <button style="margin-top:8px">Save</button>
+    </form>
+  </div>
+</div>
+{% endblock %}

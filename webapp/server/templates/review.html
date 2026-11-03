@@ -1,0 +1,62 @@
+{% extends "base.html" %}
+{% block title %}Review — Uzbek STT{% endblock %}
+{% block body %}
+<div class="card small">
+  <b>Qoidalar:</b> eshitilganini yozing · faqat lotin · apostrof faqat <code>'</code> (o'zbek, g'oya) ·
+  raqamlar so'z bilan · ruscha so'zlar lotincha · tushunarsiz → <code>[?]</code> · <i>ee, mm</i> yozmang ·
+  shovqin/musiqa yoki butunlay ruscha → <b>Yomon audio</b> · <a href="/guide" target="_blank">to'liq qoidalar</a>
+</div>
+<div class="card" id="box">
+  <div class="row" style="justify-content:space-between">
+    <div id="info" class="muted small">Yuklanmoqda…</div>
+    <div id="stats" class="small"></div>
+  </div>
+  <audio id="audio" controls style="width:100%;margin:12px 0"></audio>
+  <div class="row small muted" style="margin-bottom:8px">
+    <button type="button" onclick="replay()">↺ Qayta (Ctrl+Space)</button>
+    <button type="button" onclick="rate(0.75)">0.75×</button>
+    <button type="button" onclick="rate(1)">1×</button>
+  </div>
+  <textarea id="text" rows="4" spellcheck="false" placeholder="Transkripsiya"></textarea>
+  <div class="row" style="margin-top:12px">
+    <button class="primary" onclick="send('save')">✅ Saqlash (Ctrl+Enter)</button>
+    <button onclick="send('bad_audio')">🗑 Yomon audio</button>
+    <button onclick="send('skip')">⏭ O'tkazish</button>
+    <span id="err" style="color:var(--bad)"></span>
+  </div>
+</div>
+<div id="empty" class="card" style="display:none"><h2>🎉 Hozircha hammasi tekshirildi</h2>
+  <p class="muted">Yangi audio kelganda shu sahifa o'zi yangilanadi.</p></div>
+<script>
+let clip = null, started = 0;
+const $ = id => document.getElementById(id);
+function replay(){ const a=$('audio'); a.currentTime=0; a.play(); }
+function rate(r){ $('audio').playbackRate=r; }
+async function load(){
+  $('err').textContent='';
+  const r = await fetch('/api/review/next'); if (r.status===401) return location='/login';
+  const d = await r.json();
+  const s = d.stats;
+  $('stats').innerHTML = `Bugun: <b>${s.today_n}</b> ta (${s.today_min} daq) · Qoldi: ${s.left}`;
+  clip = d.clip;
+  if (!clip){ $('box').style.display='none'; $('empty').style.display=''; setTimeout(load, 30000); return; }
+  $('box').style.display=''; $('empty').style.display='none';
+  $('info').innerHTML = `${clip.is_test ? '<span class="chip">TEST</span> ' : ''}${clip.call} · kanal ${clip.channel} · ${clip.start}s · ${clip.duration}s`;
+  $('text').value = clip.text || '';
+  const a=$('audio'); a.src = clip.audio; a.play().catch(()=>{});
+  started = Date.now(); $('text').focus();
+}
+async function send(action){
+  if (!clip) return;
+  const r = await fetch('/api/review/'+clip.id, {method:'POST', headers:{'Content-Type':'application/json'},
+    body: JSON.stringify({action, text: $('text').value, seconds: (Date.now()-started)/1000})});
+  if (!r.ok){ const e = await r.json().catch(()=>({})); $('err').textContent = e.detail || 'Xatolik'; return; }
+  load();
+}
+document.addEventListener('keydown', e => {
+  if (e.ctrlKey && e.key==='Enter'){ e.preventDefault(); send('save'); }
+  if (e.ctrlKey && e.code==='Space'){ e.preventDefault(); replay(); }
+});
+load();
+</script>
+{% endblock %}

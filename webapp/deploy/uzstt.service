@@ -1,0 +1,15 @@
+# /etc/systemd/system/uzstt.service
+[Unit]
+Description=Uzbek STT review platform
+After=network.target
+
+[Service]
+User=uzstt
+WorkingDirectory=/opt/uzbek-whisper
+Environment=UZSTT_DATA=/srv/uzstt
+Environment=UZSTT_HTTPS=1
+ExecStart=/opt/uzbek-whisper/.venv/bin/python -m uvicorn webapp.server.app:app --host 127.0.0.1 --port 8000 --proxy-headers
+Restart=always
+
+[Install]
+WantedBy=multi-user.target

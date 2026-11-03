@@ -1,0 +1,53 @@
+<!doctype html>
+<html lang="uz">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>{% block title %}Uzbek STT{% endblock %}</title>
+<style>
+:root{--bg:#f6f7f9;--card:#fff;--fg:#1b1f24;--muted:#5f6b7a;--line:#dfe3e8;--acc:#1f6feb;--acc-fg:#fff;
+--ok:#1a7f37;--warn:#9a6700;--bad:#cf222e;--chip:#eef1f5}
+@media (prefers-color-scheme:dark){:root{--bg:#0f1216;--card:#171b21;--fg:#e6e9ee;--muted:#9aa5b4;--line:#2a313a;
+--acc:#4c8dff;--acc-fg:#0b0d10;--ok:#3fb950;--warn:#d29922;--bad:#f85149;--chip:#222831}}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--fg);font:15px/1.5 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif}
+header{display:flex;gap:16px;align-items:center;padding:10px 16px;border-bottom:1px solid var(--line);background:var(--card)}
+header .brand{font-weight:650}
+header nav{display:flex;gap:14px;margin-left:auto;align-items:center;font-size:14px}
+a{color:var(--acc);text-decoration:none} a:hover{text-decoration:underline}
+main{max-width:1100px;margin:0 auto;padding:16px}
+.card{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:16px;margin-bottom:16px}
+h1{font-size:22px;margin:4px 0 12px} h2{font-size:17px;margin:0 0 10px}
+.muted{color:var(--muted)} .small{font-size:13px}
+table{width:100%;border-collapse:collapse;font-size:14px}
+th,td{text-align:left;padding:7px 8px;border-bottom:1px solid var(--line);vertical-align:middle}
+th{color:var(--muted);font-weight:550}
+input,select,textarea{font:inherit;color:var(--fg);background:var(--bg);border:1px solid var(--line);border-radius:7px;padding:7px 9px}
+textarea{width:100%}
+button,.btn{font:inherit;cursor:pointer;border:1px solid var(--line);background:var(--chip);color:var(--fg);
+border-radius:7px;padding:7px 14px;display:inline-block}
+button.primary{background:var(--acc);color:var(--acc-fg);border-color:var(--acc);font-weight:600}
+button.danger{color:var(--bad)}
+.chip{display:inline-block;padding:1px 8px;border-radius:99px;background:var(--chip);font-size:12px}
+.s-queued{color:var(--muted)} .s-transcribing{color:var(--warn)} .s-review{color:var(--acc)} .s-reviewed{color:var(--ok)}
+.bar{height:8px;background:var(--chip);border-radius:99px;overflow:hidden;min-width:80px}
+.bar>i{display:block;height:100%;background:var(--acc)}
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:16px}
+.row{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+.msg{padding:10px 14px;border-radius:8px;background:var(--chip);margin-bottom:16px}
+.ready{border-color:var(--ok)} .ready h2{color:var(--ok)}
+.scroll{overflow-x:auto}
+</style>
+</head>
+<body>
+<header>
+  <span class="brand">🎙 Uzbek STT</span>
+  {% if u %}<nav>
+    {% if u.role == 'admin' %}<a href="/admin">Dashboard</a>{% endif %}
+    <a href="/review">Review</a><a href="/guide">Qoidalar</a>
+    <span class="muted">{{ u.username }}</span><a href="/logout">Chiqish</a>
+  </nav>{% endif %}
+</header>
+<main>{% block body %}{% endblock %}</main>
+</body>
+</html>

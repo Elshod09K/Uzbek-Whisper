@@ -50,3 +50,5 @@ Reproduce: `python benchmark.py clips_dir/ dev.tsv` (see `inspect_audio.py` for 
    ```
    Reviewers on the office network open `http://<PC-IP>:7861`. Saves go to `dataset/reviewed.jsonl`.
 3. **Fine-tune** Kotib on the reviewed clips (next step).
+
+For the multi-user web workflow (server + remote GPU worker + reviewer accounts), see [`webapp/README.md`](webapp/README.md).
