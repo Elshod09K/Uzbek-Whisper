@@ -120,10 +120,11 @@ def skip(session, audio_key):
     return show(session)
 
 
-GUIDE = """**Qoidalar / Rules** — write exactly what is said, in Latin script.
-Use oʻ / gʻ (or o' / g' — be consistent across the team) · numbers as words (*yuz*, not *100*) ·
-Russian words as heard, in Latin · unclear word → `[?]` · only noise/music/silence or
-unintelligible → **Bad audio**. Do not fix the speaker's grammar."""
+GUIDE = """**Qoidalar / Rules** (full guide: `ANNOTATION_GUIDE.md`) — eshitilganini yozing / write exactly
+what is said · faqat lotin / Latin only · apostrof faqat `'` (*o'zbek, g'oya, ma'lumot*) · raqamlar so'z bilan /
+numbers as words (*yuz ming*) · ruscha so'zlar lotincha (*zayavka*) · tushunarsiz → `[?]` · *ee, mm* yozmang ·
+faqat shovqin/musiqa/jimlik yoki yarmidan ko'pi tushunarsiz → **Bad audio** · butun gap ruscha → **Bad audio**.
+Grammatikani to'g'rilamang / do not fix grammar. Listen to the whole clip before saving."""
 
 with gr.Blocks(title="Transcript review") as demo:
     session = gr.State(lambda: os.urandom(8).hex())
